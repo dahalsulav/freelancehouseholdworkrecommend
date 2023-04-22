@@ -1,0 +1,33 @@
+{% extends "users/base.html" %} {% block content %}
+<h1>Search Results</h1>
+<hr />
+{% if workers %}
+<div class="row">
+    {% for worker in workers %}
+    <div class="col-md-4">
+  <div class="card mb-4">
+        <img
+          style="height: 150px"
+          src="{{ worker.profile_picture.url }}"
+          class="card-img-top img-fluid"
+          alt="{{ worker.user.username }}"
+        />
+        <div class="card-body">
+    <p>Skills: {{ worker.skills }}</p>
+    <p>Ratings: {{ worker.rating|default:"No ratings yet" }}</p>
+    <p>
+      Tasks completed: {{ worker.tasks_completed | default:"No tasks completed yet" }}
+    </p>
+    <a
+      href="{% url 'users:worker_profile' worker.pk %}"
+      class="btn btn-primary"
+      >View Profile</a
+    >
+  </div>
+</div>
+</div>
+  {% endfor %}
+</ul>
+{% else %}
+<p>No results found.</p>
+{% endif %} {% endblock %}
