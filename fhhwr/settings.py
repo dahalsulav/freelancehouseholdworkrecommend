@@ -143,5 +143,5 @@ EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = "fhhwrecommender@gmail.com"
-EMAIL_HOST_PASSWORD = "oywvsujcvextxius"
+EMAIL_HOST_PASSWORD = "qrtofeeazmzizlpz"
 EMAIL_USE_SSL = False

@@ -15,6 +15,7 @@ from django.core import serializers
 from decimal import Decimal
 from django.db.models import Q, Count, Avg
 from django.utils import timezone
+import uuid
 
 
 class TaskCreateView(LoginRequiredMixin, CreateView):
@@ -56,18 +57,30 @@ class TaskCreateView(LoginRequiredMixin, CreateView):
             .order_by("-tasks_completed", "-rating")
         )
 
+        # Generate a new request ID
+        request_id = str(uuid.uuid4())
+
         # Send the task request to the related workers
         top_five_workers = []
+        related_workers_count = 0
         for worker in related_workers[:5]:
             task = form.save(commit=False)
+            task.pk = None  # Create a new task instance
             task.worker = worker
+            task.request_id = request_id  # Set the request ID
+            print(task.request_id)
             task.save()
             top_five_workers.append(worker.user.username)
+            related_workers_count += 1
 
-        # Print the list of 5 workers who have been sent the task request
-        print(
-            f"Top 5 related workers who have been sent the task request: {top_five_workers}"
-        )
+        # Print the list of related workers who have been sent the task request
+        if related_workers_count > 0:
+            print(
+                f"{related_workers_count} related workers have been sent the task request"
+            )
+            print(f"{top_five_workers}")
+        else:
+            print("No related workers found for the task request")
 
         messages.success(self.request, "Task created successfully!")
         return super().form_valid(form)
@@ -86,6 +99,7 @@ class TaskUpdateView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         task = form.save(commit=False)
         if task.status == "in-progress":
+            # Assign task to worker
             worker = self.request.user.worker
             task.worker = worker
             task.hourly_rate = worker.hourly_rate
@@ -95,23 +109,36 @@ class TaskUpdateView(LoginRequiredMixin, UpdateView):
                 Decimal((task.end_time - task.start_time).total_seconds() / 3600)
                 * task.hourly_rate
             )
-        task.save()
-        # Create notification message
-        message = None
-        if task.status == "in-progress":
-            message = f"Worker - {task.worker.user.username} has accepted the task:'{task.title}'"
-        elif task.status == "completed":
-            message = f"Worker - {task.worker.user.username} has completed the task:'{task.title}'"
-        elif task.status == "rejected":
-            message = f"Worker - {task.worker.user.username} has rejected the task:'{task.title}'"
-        if message:
+            task.save()
+
+            # Update other tasks with same request_id to "vanished"
+            Task.objects.filter(request_id=task.request_id).exclude(id=task.id).update(
+                status="vanished"
+            )
+
+            # Create notification message
             TaskNotification.objects.create(
                 task=task,
-                message=message,
+                message=f"Worker - {task.worker.user.username} has accepted the task:'{task.title}'",
                 created_time=timezone.now(),
                 customer=task.customer,
             )
-        print(TaskNotification.message)
+        else:
+            task.save()
+            # Create notification message
+            message = None
+            if task.status == "completed":
+                message = f"Worker - {task.worker.user.username} has completed the task:'{task.title}'"
+            elif task.status == "rejected":
+                message = f"Worker - {task.worker.user.username} has rejected the task:'{task.title}'"
+            if message:
+                TaskNotification.objects.create(
+                    task=task,
+                    message=message,
+                    created_time=timezone.now(),
+                    customer=task.customer,
+                )
+
         messages.success(self.request, _("Task status updated successfully."))
         return super().form_valid(form)
 

@@ -11,8 +11,9 @@ class Task(models.Model):
         ("in-progress", _("In progress")),
         ("completed", _("Completed")),
         ("rejected", _("Rejected")),
+        ("vanished", _("Vanished")),
     ]
-
+    request_id = models.CharField(max_length=50, null=True, blank=True)
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     worker = models.ForeignKey(Worker, on_delete=models.CASCADE, null=True)
     title = models.CharField(max_length=100)

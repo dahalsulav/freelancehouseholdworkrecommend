@@ -10,8 +10,14 @@
 <p><strong>Start Time:</strong> {{ task.start_time }}</p>
 <p><strong>End Time:</strong> {{ task.end_time }}</p>
 <p><strong>Location:</strong> {{ task.location }}</p>
-<p><strong>Hourly Rate:</strong> {{ task.hourly_rate }}</p>
-<p><strong>Total Cost:</strong> {{ task.total_cost }}</p>
+<p>
+  <strong>Hourly Rate:</strong>{% if task.status == 'requested' %} Not
+  available{% else %} {{ task.hourly_rate }}{% endif %}
+</p>
+<p>
+  <strong>Total Cost:</strong>{% if task.status == 'requested' %} Not
+  available{% else %} {{ task.total_cost }}{% endif %}
+</p>
 <p><strong>Created Time:</strong> {{ task.created_time }}</p>
 <p><strong>Last Updated Time:</strong> {{ task.last_updated_time }}</p>
 <p><strong>Status:</strong> {{ task.status }}</p>
