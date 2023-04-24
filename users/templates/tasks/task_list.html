@@ -1,20 +1,20 @@
 {% extends 'users/base.html' %} {% block content %} {% if user.is_customer %}
 <div class="container my-4">
   <h1 class="text-center">Task List</h1>
-
   <div class="row">
     <div class="col-md-3">
       <h4>Requested Tasks</h4>
       {% if requested_tasks %}
-      <ul class="list-group">
+      <div class="list-group">
         {% for task in requested_tasks %}
-        <li class="list-group-item">
-          <a href="{% url 'tasks:task_detail' task.pk %}">
-            {{ task.title }}
-          </a>
-        </li>
+        <a
+          href="{% url 'tasks:task_detail' task.pk %}"
+          class="list-group-item list-group-item-action"
+        >
+          {{ task.title }}
+        </a>
         {% endfor %}
-      </ul>
+      </div>
       {% else %}
       <p>No requested tasks found.</p>
       {% endif %}
@@ -26,7 +26,10 @@
       <ul class="list-group">
         {% for task in in_progress_tasks %}
         <li class="list-group-item">
-          <a href="{% url 'tasks:task_detail' task.pk %}">
+          <a
+            href="{% url 'tasks:task_detail' task.pk %}"
+            class="list-group-item list-group-item-action"
+          >
             {{ task.title }}
           </a>
         </li>
@@ -43,7 +46,10 @@
       <ul class="list-group">
         {% for task in completed_tasks %}
         <li class="list-group-item">
-          <a href="{% url 'tasks:task_detail' task.pk %}">
+          <a
+            href="{% url 'tasks:task_detail' task.pk %}"
+            class="list-group-item list-group-item-action"
+          >
             {{ task.title }}
           </a>
         </li>
@@ -60,7 +66,10 @@
       <ul class="list-group">
         {% for task in rejected_tasks %}
         <li class="list-group-item">
-          <a href="{% url 'tasks:task_detail' task.pk %}">
+          <a
+            href="{% url 'tasks:task_detail' task.pk %}"
+            class="list-group-item list-group-item-action"
+          >
             {{ task.title }}
           </a>
         </li>
@@ -84,7 +93,10 @@
       <ul class="list-group">
         {% for task in requested_tasks %}
         <li class="list-group-item">
-          <a href="{% url 'tasks:task_detail' task.pk %}">
+          <a
+            href="{% url 'tasks:task_detail' task.pk %}"
+            class="list-group-item list-group-item-action"
+          >
             {{ task.title }}
           </a>
         </li>
@@ -101,7 +113,10 @@
       <ul class="list-group">
         {% for task in in_progress_tasks %}
         <li class="list-group-item">
-          <a href="{% url 'tasks:task_detail' task.pk %}">
+          <a
+            href="{% url 'tasks:task_detail' task.pk %}"
+            class="list-group-item list-group-item-action"
+          >
             {{ task.title }}
           </a>
         </li>
@@ -118,7 +133,10 @@
       <ul class="list-group">
         {% for task in completed_tasks %}
         <li class="list-group-item">
-          <a href="{% url 'tasks:task_detail' task.pk %}">
+          <a
+            href="{% url 'tasks:task_detail' task.pk %}"
+            class="list-group-item list-group-item-action"
+          >
             {{ task.title }}
           </a>
         </li>
@@ -135,7 +153,10 @@
       <ul class="list-group">
         {% for task in rejected_tasks %}
         <li class="list-group-item">
-          <a href="{% url 'tasks:task_detail' task.pk %}">
+          <a
+            href="{% url 'tasks:task_detail' task.pk %}"
+            class="list-group-item list-group-item-action"
+          >
             {{ task.title }}
           </a>
         </li>

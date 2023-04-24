@@ -161,24 +161,21 @@ class CustomLoginView(LoginView):
 
         if user is not None:
             if user.is_customer and not user.customer.email_verified:
-                messages.error(
-                    self.request, "Please verify your email address before logging in."
+                toastr.warning(
+                    "Please verify your email address before logging in."
                 )
                 return self.form_invalid(form)
             elif user.is_worker and not user.worker.email_verified:
-                messages.error(
-                    self.request, "Please verify your email address before logging in."
+                toastr.warning(
+                    "Please verify your email address before logging in."
                 )
                 return self.form_invalid(form)
             login(self.request, user)
             return HttpResponseRedirect(self.get_success_url())
         else:
+            toastr.error("Invalid username or password.")
             return self.form_invalid(form)
 
-    def form_invalid(self, form):
-        print("Login form is invalid.")
-        print(form.errors)
-        return super().form_invalid(form)
 
 
 class CustomLogoutView(LogoutView):
