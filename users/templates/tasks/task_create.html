@@ -41,4 +41,31 @@
   <button type="submit" class="btn btn-primary">Request Task</button>
 </form>
 
+<script>
+  $(document).ready(function () {
+    const startTime = $("input[name='start_time']");
+    const endTime = $("input[name='end_time']");
+
+    function CheckDateTime() {
+      const start = new Date(startTime.val());
+      const end = new Date(endTime.val());
+      const hours = (end - start) / (1000 * 60 * 60);
+      const now = new Date();
+
+      if (start < now) {
+        alert("Start time should be greater than the current time.");
+        startTime.val("");
+        return;
+      }
+
+      if (end <= start) {
+        alert("End time should be greater than the start time.");
+        endTime.val("");
+        return;
+      }
+    }
+    startTime.on("change", CheckDateTime);
+    endTime.on("change", CheckDateTime);
+  });
+</script>
 {% endblock %}
