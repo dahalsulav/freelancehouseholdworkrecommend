@@ -38,11 +38,6 @@ urlpatterns = [
         name="worker_profile",
     ),
     path(
-        "search/",
-        views.WorkerSearchResultsView.as_view(),
-        name="worker_search_results",
-    ),
-    path(
         "resend_activation_link/",
         views.ResendActivationLinkView.as_view(),
         name="resend_activation_link",

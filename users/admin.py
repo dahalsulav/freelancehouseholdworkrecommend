@@ -93,6 +93,7 @@ class WorkerAdmin(admin.ModelAdmin):
         "hourly_rate",
         "email_verified",
         "is_available",
+        "approved_by_admin",
     )
     search_fields = (
         "user__email",
@@ -101,6 +102,7 @@ class WorkerAdmin(admin.ModelAdmin):
         "location",
         "skills",
     )
+    list_editable = ("approved_by_admin",)
 
 
 admin.site.register(User, UserAdmin)

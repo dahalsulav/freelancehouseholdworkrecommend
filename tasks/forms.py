@@ -30,11 +30,17 @@ class TaskCreateForm(forms.ModelForm):
         ]
         widgets = {
             "title": forms.TextInput(
-                attrs={"class": "form-control", "placeholder": "Enter Title"}
+                attrs={"class": "form-control", "placeholder": "eg - cleaning"}
             ),
-            "description": forms.Textarea(attrs={"class": "form-control", "rows": 5}),
+            "description": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "rows": 5,
+                    "placeholder": "eg - cleaning my flat having 4 rooms",
+                }
+            ),
             "location": forms.TextInput(
-                attrs={"class": "form-control", "placeholder": "Enter Location"}
+                attrs={"class": "form-control", "placeholder": "eg - kathmandu"}
             ),
         }
 

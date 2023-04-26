@@ -4,12 +4,15 @@
     <div class="col-md-6 text-center">
       <a
         href="{% url 'tasks:task_create_button' %}"
-        class="btn btn-primary btn-lg"
+        class="btn btn-success btn-lg text-white"
         >Request a Task</a
       >
     </div>
     <div class="col-md-6 text-center border-left bg-light">
-      <h2 class="text-dark mb-4" style="font-size: 30px !important">
+      <h2
+        class="text-dark mb-4 pt-3 text-dark"
+        style="font-size: 30px !important"
+      >
         Latest Task Notifications
       </h2>
       {% if task_notifications %}

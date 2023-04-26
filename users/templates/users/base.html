@@ -495,5 +495,12 @@
       crossorigin="anonymous"
       referrerpolicy="no-referrer"
     />
+    <script>
+      $(document).ready(function () {
+        {% for message in messages %}
+          toastr.{{ message.tags }}('{{ message }}');
+        {% endfor %}
+      });
+    </script>
   </body>
 </html>

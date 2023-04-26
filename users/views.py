@@ -106,6 +106,11 @@ class WorkerRegistrationView(CreateView):
     def form_valid(self, form):
         response = super().form_valid(form)
 
+        # Set approved_by_admin to False by default
+        worker = self.object.worker
+        worker.approved_by_admin = False
+        worker.save()
+
         # Send email to the worker with the activation link
         mail_subject = "Activate your account"
         message = render_to_string(
@@ -159,23 +164,29 @@ class CustomLoginView(LoginView):
         password = self.request.POST["password"]
         user = authenticate(self.request, username=username, password=password)
 
-        if user is not None:
+        if user is not None and user.is_active:
             if user.is_customer and not user.customer.email_verified:
-                toastr.warning(
-                    "Please verify your email address before logging in."
+                messages.warning(
+                    self.request, "Please verify your email address before logging in."
                 )
                 return self.form_invalid(form)
             elif user.is_worker and not user.worker.email_verified:
-                toastr.warning(
-                    "Please verify your email address before logging in."
+                messages.warning(
+                    self.request, "Please verify your email address before logging in."
                 )
                 return self.form_invalid(form)
-            login(self.request, user)
-            return HttpResponseRedirect(self.get_success_url())
+            elif user.is_worker and not user.worker.approved_by_admin:
+                messages.warning(
+                    self.request, "Your account is pending approval from the admin."
+                )
+                return self.form_invalid(form)
+            else:
+                login(self.request, user)
+                messages.success(self.request, "Logged in successfully.")
+                return redirect(self.get_success_url())
         else:
-            toastr.error("Invalid username or password.")
+            messages.warning(self.request, "Invalid username or password.")
             return self.form_invalid(form)
-
 
 
 class CustomLogoutView(LogoutView):
@@ -275,23 +286,6 @@ class UserProfileView(LoginRequiredMixin, DetailView):
         elif user.is_worker:
             context["worker"] = user.worker
         return context
-
-
-class WorkerSearchResultsView(View):
-    def get(self, request):
-        query = request.GET.get("query")
-        workers = Worker.objects.all()
-        if query:
-            search_words = query.split()
-            workers = workers.filter(skills__icontains=search_words[0])
-            for word in search_words[1:]:
-                workers = workers.filter(skills__icontains=word)
-        workers = workers.annotate(
-            rating=Avg("task__rating"),
-            tasks_completed=Count("task", filter=Q(task__status="completed")),
-        ).order_by("-rating")
-        context = {"workers": workers}
-        return render(request, "users/worker_search_results.html", context)
 
 
 class WorkerProfileView(LoginRequiredMixin, DetailView):

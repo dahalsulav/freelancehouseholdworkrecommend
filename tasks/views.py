@@ -128,8 +128,14 @@ class TaskUpdateView(LoginRequiredMixin, UpdateView):
             # Create notification message
             message = None
             if task.status == "completed":
+                messages.success(
+                    self.request, _("Task status set to completed successfully.")
+                )
                 message = f"Worker - {task.worker.user.username} has completed the task:'{task.title}'"
             elif task.status == "rejected":
+                messages.success(
+                    self.request, _("Task status set to rejected successfully.")
+                )
                 message = f"Worker - {task.worker.user.username} has rejected the task:'{task.title}'"
             if message:
                 TaskNotification.objects.create(
@@ -139,7 +145,6 @@ class TaskUpdateView(LoginRequiredMixin, UpdateView):
                     customer=task.customer,
                 )
 
-        messages.success(self.request, _("Task status updated successfully."))
         return super().form_valid(form)
 
     def get_form(self, form_class=None):

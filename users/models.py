@@ -45,6 +45,7 @@ class Worker(models.Model):
     hourly_rate = models.DecimalField(max_digits=6, decimal_places=2)
     email_verified = models.BooleanField(default=False)
     is_available = models.BooleanField(default=True)
+    approved_by_admin = models.BooleanField(default=False)
     profile_picture = models.ImageField(
         upload_to="profile_pictures/",
         default="https://cdn4.iconfinder.com/data/icons/small-n-flat/24/user-512.png",
