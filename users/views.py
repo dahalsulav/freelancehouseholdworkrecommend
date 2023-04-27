@@ -26,7 +26,6 @@ from tasks.models import Task
 from django.contrib.auth.decorators import login_required
 from tasks.forms import TaskCreateForm
 from django.db.models import Avg, Count, Q
-from .recommendations import get_worker_recommendations
 from tasks.models import TaskNotification
 
 

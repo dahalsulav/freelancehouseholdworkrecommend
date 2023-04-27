@@ -16,9 +16,10 @@ from decimal import Decimal
 from django.db.models import Q, Count, Avg
 from django.utils import timezone
 import uuid
+from tasks.recommendations import pearson_correlation_coefficient
 
 
-class TaskCreateView(LoginRequiredMixin, CreateView):
+class TaskCreateView(CreateView):
     model = Task
     form_class = TaskCreateForm
     template_name = "tasks/task_create.html"
@@ -44,18 +45,45 @@ class TaskCreateView(LoginRequiredMixin, CreateView):
         ).distinct()
 
         # Exclude the workers with conflicting tasks
-        available_workers = available_workers.exclude(task__in=conflicting_tasks)
-
-        # Get the related workers based on their skills
-        query = form.cleaned_data.get("title")
-        related_workers = (
-            available_workers.filter(skills__icontains=query)
-            .annotate(
-                rating=Avg("task__rating"),
-                tasks_completed=Count("task", filter=Q(task__status="completed")),
-            )
-            .order_by("-tasks_completed", "-rating")
+        available_workers = available_workers.exclude(
+            id__in=[task.worker.id for task in conflicting_tasks]
         )
+
+        # Get the related workers based on their skills and ratings
+        query = form.cleaned_data.get("title")
+        matching_workers = available_workers.filter(skills__icontains=query)
+
+        # Initialize top_worker to None as a fallback
+        top_worker = None
+
+        if matching_workers.exists():
+            # Get the top 5 related workers based on their ratings and completed tasks
+            related_workers = (
+                matching_workers.annotate(
+                    rating=Avg("task__rating"),
+                    tasks_completed=Count("task", filter=Q(task__status="completed")),
+                )
+                .order_by("-tasks_completed", "-rating")
+                .filter(skills__icontains=query)[:5]
+            )
+
+        else:
+            # If no worker with matching skills, use Pearson correlation coefficient
+            print("No related workers found, so using Pearson coefficient")
+            # If no worker with matching skills, use the first available worker as fallback
+            top_worker = (
+                available_workers.annotate(
+                    rating=Avg("task__rating"),
+                    tasks_completed=Count("task", filter=Q(task__status="completed")),
+                )
+                .order_by("-tasks_completed", "-rating")
+                .first()
+            )
+            print(top_worker)
+            # Call the function to generate task recommendations using Pearson correlation coefficient
+            related_workers = pearson_correlation_coefficient(
+                top_worker.id, available_workers, n=5
+            )
 
         # Generate a new request ID
         request_id = str(uuid.uuid4())
@@ -63,12 +91,12 @@ class TaskCreateView(LoginRequiredMixin, CreateView):
         # Send the task request to the related workers
         top_five_workers = []
         related_workers_count = 0
-        for worker in related_workers[:5]:
+        for worker in related_workers:
             task = form.save(commit=False)
             task.pk = None  # Create a new task instance
             task.worker = worker
             task.request_id = request_id  # Set the request ID
-            print(task.request_id)
+            task.hourly_rate = worker.hourly_rate
             task.save()
             top_five_workers.append(worker.user.username)
             related_workers_count += 1
@@ -79,10 +107,13 @@ class TaskCreateView(LoginRequiredMixin, CreateView):
                 f"{related_workers_count} related workers have been sent the task request"
             )
             print(f"{top_five_workers}")
+            messages.success(self.request, "Task created successfully!")
         else:
             print("No related workers found for the task request")
+            messages.success(
+                self.request, "No related workers found for the task request"
+            )
 
-        messages.success(self.request, "Task created successfully!")
         return super().form_valid(form)
 
 
