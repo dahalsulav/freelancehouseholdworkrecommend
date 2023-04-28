@@ -106,7 +106,10 @@ class WorkerAdmin(admin.ModelAdmin):
 
 
 class HourlyRateApprovalAdmin(admin.ModelAdmin):
-    list_display = ("worker", "hourly_rate", "approved")
+    list_display = ("worker_username", "hourly_rate", "approved")
+
+    def worker_username(self, obj):
+        return obj.worker.user.username
 
     def save_model(self, request, obj, form, change):
         # If the approval is being approved, update the worker's hourly rate
