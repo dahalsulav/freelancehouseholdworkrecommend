@@ -9,6 +9,7 @@ class TaskCreateForm(forms.ModelForm):
             attrs={"type": "datetime-local", "class": "form-control"},
             format="%Y-%m-%dT%H:%M",
         ),
+        required=True,
     )
 
     end_time = forms.DateTimeField(
@@ -17,7 +18,14 @@ class TaskCreateForm(forms.ModelForm):
             attrs={"type": "datetime-local", "class": "form-control"},
             format="%Y-%m-%dT%H:%M",
         ),
+        required=True,
     )
+
+    title = forms.CharField(required=True)
+    description = forms.CharField(
+        required=True, widget=forms.Textarea(attrs={"rows": 5})
+    )
+    location = forms.CharField(required=True)
 
     class Meta:
         model = Task

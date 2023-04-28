@@ -58,6 +58,7 @@
     const registrationForm = document.querySelector("form");
     const phoneNumberInput = document.getElementById("id_phone_number");
     const usernameInput = document.getElementById("id_username");
+    const skillsInput = document.getElementById("id_skills");
 
     registrationForm.addEventListener("submit", function (event) {
       const phoneNumber = phoneNumberInput.value;
@@ -83,6 +84,18 @@
           "Username must be alphanumeric or alphabets only and cannot be numbers only.";
       } else {
         usernameInput.classList.remove("is-invalid");
+      }
+
+      const skills = skillsInput.value;
+      const skillsRegex = /^[^\d]*$/;
+
+      if (!skillsRegex.test(skills)) {
+        event.preventDefault();
+        skillsInput.classList.add("is-invalid");
+        const errorDiv = skillsInput.nextElementSibling;
+        errorDiv.textContent = "Skills cannot contain any digits.";
+      } else {
+        skillsInput.classList.remove("is-invalid");
       }
     });
   });

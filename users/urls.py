@@ -37,9 +37,4 @@ urlpatterns = [
         views.WorkerProfileView.as_view(),
         name="worker_profile",
     ),
-    path(
-        "resend_activation_link/",
-        views.ResendActivationLinkView.as_view(),
-        name="resend_activation_link",
-    ),
 ]

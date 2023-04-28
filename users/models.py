@@ -42,7 +42,7 @@ class Worker(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     location = models.CharField(max_length=255)
     skills = models.CharField(max_length=255)
-    hourly_rate = models.DecimalField(max_digits=6, decimal_places=2)
+    hourly_rate = models.DecimalField(max_digits=6, decimal_places=2, default=0.0)
     email_verified = models.BooleanField(default=False)
     is_available = models.BooleanField(default=True)
     approved_by_admin = models.BooleanField(default=False)
@@ -56,3 +56,6 @@ class HourlyRateApproval(models.Model):
     worker = models.ForeignKey(Worker, on_delete=models.CASCADE)
     hourly_rate = models.DecimalField(max_digits=6, decimal_places=2)
     approved = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Hourly rate approval for {self.worker.user.username}"

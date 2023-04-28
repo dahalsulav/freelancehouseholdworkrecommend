@@ -152,14 +152,3 @@ class WorkerUpdateForm(forms.ModelForm):
         if hourly_rate < 0:
             raise ValidationError("Hourly rate cannot be negative.")
         return hourly_rate
-
-    def save(self, commit=True):
-        instance = super().save(commit=False)
-        instance.location = self.cleaned_data["location"]
-        instance.skills = self.cleaned_data["skills"]
-        instance.hourly_rate = self.cleaned_data["hourly_rate"]
-        if commit:
-            instance.save()
-            instance.user.phone_number = self.cleaned_data["phone_number"]
-            instance.user.save()
-        return instance

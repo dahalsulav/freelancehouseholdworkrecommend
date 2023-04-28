@@ -20,12 +20,28 @@ from tasks.recommendations import pearson_correlation_coefficient
 
 
 class TaskCreateView(CreateView):
+    """
+    View for creating a new task. Inherits from Django's CreateView class.
+    Allows a customer to create a new task by providing the task details.
+    Uses the TaskCreateForm form to get the details of the task.
+    On successful submission of the form, assigns the task to a worker based on their skills,
+    ratings, and availability using a custom algorithm.
+    Sends a request to the top 5 matching workers based on their skills and ratings.
+    If no matching workers are found, uses the Pearson correlation coefficient to find
+    similar workers and sends the request to them.
+    """
+
     model = Task
     form_class = TaskCreateForm
     template_name = "tasks/task_create.html"
     success_url = reverse_lazy("tasks:task_list")
 
     def form_valid(self, form):
+        """
+        If the form is valid, creates a new task instance with the provided form data.
+        Finds a matching worker based on their skills, ratings, and availability using a custom algorithm.
+        Sends a task request to the top 5 matching workers.
+        """
         # Set the customer for the task
         form.instance.customer = self.request.user.customer
 
@@ -122,6 +138,21 @@ def is_worker(user):
 
 
 class TaskUpdateView(LoginRequiredMixin, UpdateView):
+    """
+    Allows updating the status of a `Task` instance. The `Task` model represents a task that can be created by a customer and accepted by a worker.
+
+    Attributes:
+        model (Task): The `Task` model to use for the view.
+        form_class (TaskStatusUpdateForm): The form to use to update the task status.
+        template_name (str): The name of the template to use for rendering the view.
+        success_url (str): The URL to redirect to after a successful update.
+
+    Methods:
+        form_valid(form): Processes the form after validation, assigns the task to a worker, and creates a notification message. If the task status is "in-progress", it assigns the task to the current user (worker), sets the start time, end time, and total cost of the task, updates other tasks with the same `request_id` to "vanished", and creates a notification message. If the status is "completed" or "rejected", it updates the task status and creates a notification message.
+        get_form(form_class=None): Returns an instance of the form to be used in this view. If called from a requested status, it shows only in-progress and rejected options. If called from an in-progress status, it shows only the completed option.
+        get_context_data(**kwargs): Adds a boolean value to the context that indicates whether to show the update status field on the template.
+    """
+
     model = Task
     form_class = TaskStatusUpdateForm
     template_name = "tasks/task_update.html"
@@ -203,16 +234,51 @@ class TaskUpdateView(LoginRequiredMixin, UpdateView):
 
 
 class TaskDetailView(LoginRequiredMixin, DetailView):
+    """
+    The TaskDetailView class-based view displays the details of a particular task to a logged-in user. It inherits from Django's DetailView and requires the user to be authenticated. The view renders the tasks/task_detail.html template and uses the Task model to retrieve the details of the task.
+
+    Attributes:
+
+    model: The Task model used to retrieve the details of the task.
+    template_name: The template used to render the view.
+    Methods:
+
+    get_object(): Overrides the method from DetailView and returns the Task object corresponding to the primary key value captured from the URL.
+    get_context_data(**kwargs): Overrides the method from DetailView and adds additional context to the view. The method retrieves the Task object for the view, then retrieves the customer and worker associated with the task. The context dictionary contains the task object and the associated customer and worker objects. The method returns the updated context dictionary.
+
+    """
+
     model = Task
     template_name = "tasks/task_detail.html"
 
 
 class TaskListView(LoginRequiredMixin, ListView):
+    """
+    A view that displays a list of tasks based on the user's role (customer or worker).
+
+    Attributes:
+        model (Task): The model used by this view.
+        template_name (str): The name of the template used to render the view.
+        context_object_name (str): The name of the context variable containing the list of tasks.
+
+    Methods:
+        get_queryset(): Returns the list of tasks based on the user's role (customer or worker).
+        get_context_data(**kwargs): Adds additional context variables based on the user's role.
+
+    """
+
     model = Task
     template_name = "tasks/task_list.html"
     context_object_name = "tasks"
 
     def get_queryset(self):
+        """
+        Returns the list of tasks based on the user's role (customer or worker).
+
+        Returns:
+            QuerySet: The list of tasks.
+
+        """
         user = self.request.user
         if user.is_customer:
             tasks = Task.objects.filter(customer=user.customer).order_by(
@@ -225,13 +291,28 @@ class TaskListView(LoginRequiredMixin, ListView):
         return tasks
 
     def get_context_data(self, **kwargs):
+        """
+        Adds additional context variables based on the user's role.
+
+        Returns:
+            dict: A dictionary containing the additional context variables.
+
+        """
         context = super().get_context_data(**kwargs)
         user = self.request.user
         if user.is_customer:
             customer = user.customer
-            context["requested_tasks"] = Task.objects.filter(
-                customer=customer, status="requested"
-            )
+            requested_tasks = Task.objects.filter(customer=customer, status="requested")
+
+            request_ids = []
+            unique_requested_tasks = []
+            for task in requested_tasks:
+                if task.request_id not in request_ids:
+                    request_ids.append(task.request_id)
+                    unique_requested_tasks.append(task)
+
+            context["requested_tasks"] = unique_requested_tasks
+
             context["rejected_tasks"] = Task.objects.filter(
                 customer=customer, status="rejected"
             )

@@ -1,67 +1,123 @@
-from django.contrib.auth import get_user_model
-from django.test import Client, TestCase
+from django.test import TestCase, Client
 from django.urls import reverse
-from decimal import Decimal
-from django.utils import timezone
+from django.contrib.auth.models import User
+from datetime import datetime, timedelta
+from users.models import Customer, Worker
+from tasks.models import Task
+from tasks.forms import TaskCreateForm
+import pytz
+from unittest import mock
 import uuid
 
-from .models import Task, TaskNotification
-from users.models import Worker, Customer
 
-User = get_user_model()
-
-
-class TaskCreateViewTestCase(TestCase):
+class TaskCreateViewTest(TestCase):
     def setUp(self):
+        self.client = Client()
+        self.customer_user = User.objects.create_user(
+            username="customer", password="password"
+        )
+        self.worker_user = User.objects.create_user(
+            username="worker", password="password"
+        )
+        self.customer = Customer.objects.create(user=self.customer_user)
+        self.worker = Worker.objects.create(user=self.worker_user, hourly_rate=10)
+        self.url = reverse("tasks:task_create")
+
+    def test_task_create_view(self):
+        self.client.login(username="customer", password="password")
+        start_time = datetime.now(pytz.utc) + timedelta(hours=2)
+        end_time = datetime.now(pytz.utc) + timedelta(hours=4)
+        data = {
+            "title": "Test Task",
+            "description": "This is a test task.",
+            "start_time": start_time,
+            "end_time": end_time,
+            "location": "Test location",
+        }
+        form = TaskCreateForm(data)
+        self.assertTrue(form.is_valid())
+        with mock.patch("uuid.uuid4") as mock_uuid:
+            mock_uuid.return_value = uuid.UUID("abcdefg")
+            response = self.client.post(self.url, data=data)
+        self.assertEqual(response.status_code, 302)
+        task = Task.objects.first()
+        self.assertEqual(task.customer, self.customer)
+        self.assertEqual(task.title, "Test Task")
+        self.assertEqual(task.description, "This is a test task.")
+        self.assertEqual(task.start_time, start_time)
+        self.assertEqual(task.end_time, end_time)
+        self.assertEqual(task.location, "Test location")
+        self.assertEqual(task.status, "requested")
+        self.assertEqual(task.request_id, "abcdefg")
+        self.assertEqual(task.hourly_rate, self.worker.hourly_rate)
+        self.assertEqual(task.total_cost, None)
+        self.assertEqual(task.rating, None)
+        self.assertEqual(task.review, "")
+        self.assertEqual(task.worker, self.worker)
+
+
+class TaskUpdateViewTestCase(TestCase):
+    def setUp(self):
+        self.client = Client()
+
         # Create a customer user
         self.customer_user = User.objects.create_user(
-            username="customer1", email="customer1@test.com", password="test1234"
+            username="customer", password="testpassword"
         )
         self.customer = Customer.objects.create(user=self.customer_user)
 
         # Create a worker user
         self.worker_user = User.objects.create_user(
-            username="worker1", email="worker1@test.com", password="test1234"
+            username="worker", password="testpassword"
         )
-        self.worker = Worker.objects.create(
-            user=self.worker_user, hourly_rate=20.0, is_available=True
-        )
+        self.worker = Worker.objects.create(user=self.worker_user, hourly_rate=20)
 
         # Create a task
         self.task = Task.objects.create(
-            title="Test Task",
             customer=self.customer,
-            start_time=timezone.now(),
-            end_time=timezone.now(),
+            title="Test Task",
+            description="Test task description",
+            location="Test Location",
+            hourly_rate=20,
+            start_time="2023-05-01 08:00:00",
+            end_time="2023-05-01 10:00:00",
+            status="requested",
         )
 
-        # Create a client
-        self.client = Client()
+    def test_task_update_view(self):
+        # Login as worker
+        self.client.force_login(self.worker_user)
 
-    def test_task_create_view_redirects_to_login(self):
-        # Send a GET request to the TaskCreateView
-        response = self.client.get(reverse("tasks:task_create"))
-
-        # Check that the user is redirected to the login page
+        # Update the task status to "in-progress"
+        url = reverse("tasks:task_update", kwargs={"pk": self.task.pk})
+        data = {
+            "status": "in-progress",
+            "start_time": "2023-05-01 08:00:00",
+            "end_time": "2023-05-01 10:00:00",
+        }
+        response = self.client.post(url, data)
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, "/accounts/login/?next=/tasks/create/")
+        self.assertRedirects(response, reverse("tasks:task_list"))
+        self.task.refresh_from_db()
+        self.assertEqual(self.task.status, "in-progress")
+        self.assertEqual(self.task.worker, self.worker)
+        self.assertEqual(self.task.start_time.year, 2023)
+        self.assertEqual(self.task.end_time.year, 2023)
 
-    def test_task_create_view_create_task(self):
-        # Login as the customer user
-        self.client.login(username="customer1", password="test1234")
-
-        # Send a POST request to the TaskCreateView
-        response = self.client.post(
-            reverse("tasks:task_create"),
-            {
-                "title": "Test Task 2",
-                "description": "Test description",
-                "start_time": timezone.now(),
-                "end_time": timezone.now(),
-            },
-        )
-
-        # Check that the task is created successfully
+        # Update the task status to "completed"
+        url = reverse("tasks:task_update", kwargs={"pk": self.task.pk})
+        data = {"status": "completed"}
+        response = self.client.post(url, data)
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(Task.objects.count(), 2)
-        self.assertEqual(Task.objects.last().title, "Test Task 2")
+        self.assertRedirects(response, reverse("tasks:task_list"))
+        self.task.refresh_from_db()
+        self.assertEqual(self.task.status, "completed")
+
+        # Update the task status to "rejected"
+        url = reverse("tasks:task_update", kwargs={"pk": self.task.pk})
+        data = {"status": "rejected"}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse("tasks:task_list"))
+        self.task.refresh_from_db()
+        self.assertEqual(self.task.status, "rejected")

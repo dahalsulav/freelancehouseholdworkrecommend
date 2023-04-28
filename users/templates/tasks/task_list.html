@@ -44,16 +44,22 @@
       <h4 class="pb-3">Completed Tasks</h4>
       {% if completed_tasks %}
       <div class="list-group">
-        {% for task in completed_tasks %}
-
+        <h5>Yet to be Rated</h5>
+        {% for task in completed_tasks %} {% if task.rating is None %}
         <a
           href="{% url 'tasks:task_detail' task.pk %}"
           class="list-group-item list-group-item-action alert alert-danger"
+          >{{ task.title }}</a
         >
-          {{ task.title }}
-        </a>
-
-        {% endfor %}
+        {% endif %} {% endfor %}
+        <h5>Already Rated</h5>
+        {% for task in completed_tasks %} {% if task.rating %}
+        <a
+          href="{% url 'tasks:task_detail' task.pk %}"
+          class="list-group-item list-group-item-action alert alert-success"
+          >{{ task.title }}</a
+        >
+        {% endif %} {% endfor %}
       </div>
       {% else %}
       <p>No completed tasks found.</p>

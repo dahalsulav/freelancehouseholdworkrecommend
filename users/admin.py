@@ -105,27 +105,19 @@ class WorkerAdmin(admin.ModelAdmin):
     list_editable = ("approved_by_admin",)
 
 
+class HourlyRateApprovalAdmin(admin.ModelAdmin):
+    list_display = ("worker", "hourly_rate", "approved")
+
+    def save_model(self, request, obj, form, change):
+        # If the approval is being approved, update the worker's hourly rate
+        if obj.approved:
+            obj.worker.hourly_rate = obj.hourly_rate
+            obj.worker.save()
+
+        super().save_model(request, obj, form, change)
+
+
+admin.site.register(HourlyRateApproval, HourlyRateApprovalAdmin)
 admin.site.register(User, UserAdmin)
 admin.site.register(Customer, CustomerAdmin)
 admin.site.register(Worker, WorkerAdmin)
-
-
-@admin.register(HourlyRateApproval)
-class HourlyRateApprovalAdmin(admin.ModelAdmin):
-    list_display = ("worker", "hourly_rate", "approved")
-    actions = ["approve_workers"]
-
-    def approve_workers(self, request, queryset):
-        for hourly_rate_approval in queryset:
-            if not hourly_rate_approval.approved:
-                hourly_rate_approval.approved = True
-                hourly_rate_approval.worker.user.is_active = True
-                hourly_rate_approval.worker.hourly_rate = (
-                    hourly_rate_approval.hourly_rate
-                )
-                hourly_rate_approval.worker.save()
-                hourly_rate_approval.worker.user.save()
-                hourly_rate_approval.save()
-        self.message_user(request, "Selected workers have been approved.")
-
-    approve_workers.short_description = "Approve workers and their hourly rates"
